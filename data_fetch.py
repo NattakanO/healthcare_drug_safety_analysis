@@ -1,16 +1,3 @@
-"""
-Step 1: Pull drug adverse event data from the openFDA API.
-
-Run this locally (not in a sandboxed/restricted environment) since it
-needs real internet access to api.fda.gov.
-
-Usage:
-    python 01_fetch_data.py
-
-Output:
-    data/raw_adverse_events.csv
-"""
-
 import requests
 import pandas as pd
 import time
@@ -18,13 +5,9 @@ import os
 
 BASE_URL = "https://api.fda.gov/drug/event.json"
 
-# --- Config: tune these ---
-# Start with 2-3 well-known drugs so results stay meaningful and small
-# enough to iterate on quickly. Expand later once the pipeline works.
 DRUGS = ["metformin", "ibuprofen", "atorvastatin"]
-RECORDS_PER_DRUG = 2000     # openFDA max per query is 26,000; keep small for v1
-PAGE_SIZE = 100              # openFDA max per single call is 1000, but 100 is
-                              # safer to avoid timeouts while iterating
+RECORDS_PER_DRUG = 2000   
+PAGE_SIZE = 100             
 OUTPUT_PATH = "data/raw_adverse_events.csv"
 
 
@@ -56,7 +39,7 @@ def fetch_drug_events(drug_name: str, total_records: int, page_size: int) -> lis
         skip += page_size
         print(f"  {drug_name}: pulled {len(all_results)} records so far")
 
-        time.sleep(0.3)  # be polite to the API, avoid rate limiting
+        time.sleep(0.3) 
 
     return all_results
 
@@ -64,7 +47,7 @@ def fetch_drug_events(drug_name: str, total_records: int, page_size: int) -> lis
 def flatten_record(record: dict, queried_drug: str) -> list[dict]:
     """
     Turn one nested API record into one row per (drug, reaction) pair.
-    Deliberately drops the bulky `openfda` enrichment block -- it's not
+    Deliberately drops the bulky `openfda` enrichment block. it's not
     needed for this analysis and can balloon record size significantly.
     """
     rows = []
@@ -72,18 +55,27 @@ def flatten_record(record: dict, queried_drug: str) -> list[dict]:
     drugs = patient.get("drug", [])
     reactions = patient.get("reaction", [])
 
-    reaction_terms = [r.get("reactionmeddrapt") for r in reactions if r.get("reactionmeddrapt")]
     drug_names = [d.get("medicinalproduct") for d in drugs if d.get("medicinalproduct")]
+    drug_routes = [d.get("drugadministrationroute") for d in drugs if d.get("drugadministrationroute")]
 
-    for reaction_term in reaction_terms:
+    for reaction in reactions:
+        reaction_term = reaction.get("reactionmeddrapt")
+        if not reaction_term:
+            continue
         rows.append({
             "safetyreportid": record.get("safetyreportid"),
             "queried_drug": queried_drug,
             "drug_names_on_report": "; ".join(drug_names),
+            "drug_routes_on_report": "; ".join(drug_routes) if drug_routes else None,
             "reaction_term": reaction_term,
+            "reaction_outcome": reaction.get("reactionoutcome"),
             "serious": record.get("serious"),
             "seriousnessdeath": record.get("seriousnessdeath", "0"),
             "seriousnesshospitalization": record.get("seriousnesshospitalization", "0"),
+            "seriousnesslifethreatening": record.get("seriousnesslifethreatening", "0"),
+            "seriousnessdisabling": record.get("seriousnessdisabling", "0"),
+            "seriousnesscongenitalanomali": record.get("seriousnesscongenitalanomali", "0"),
+            "occurcountry": record.get("occurcountry"),
             "patient_sex": patient.get("patientsex"),
             "patient_age": patient.get("patientonsetage"),
             "receivedate": record.get("receivedate"),
