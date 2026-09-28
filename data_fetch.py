@@ -7,7 +7,7 @@ BASE_URL = "https://api.fda.gov/drug/event.json"
 
 DRUGS = ["metformin", "ibuprofen", "atorvastatin"]
 RECORDS_PER_DRUG = 2000   
-PAGE_SIZE = 100             
+PAGE_SIZE = 100              
 OUTPUT_PATH = "data/raw_adverse_events.csv"
 
 
@@ -26,7 +26,6 @@ def fetch_drug_events(drug_name: str, total_records: int, page_size: int) -> lis
         response = requests.get(BASE_URL, params=params, timeout=30)
 
         if response.status_code == 404:
-            # openFDA returns 404 when skip exceeds available results
             print(f"  No more results for {drug_name} at skip={skip}")
             break
         response.raise_for_status()
@@ -39,17 +38,12 @@ def fetch_drug_events(drug_name: str, total_records: int, page_size: int) -> lis
         skip += page_size
         print(f"  {drug_name}: pulled {len(all_results)} records so far")
 
-        time.sleep(0.3) 
+        time.sleep(0.3)  
 
     return all_results
 
 
 def flatten_record(record: dict, queried_drug: str) -> list[dict]:
-    """
-    Turn one nested API record into one row per (drug, reaction) pair.
-    Deliberately drops the bulky `openfda` enrichment block. it's not
-    needed for this analysis and can balloon record size significantly.
-    """
     rows = []
     patient = record.get("patient", {})
     drugs = patient.get("drug", [])
@@ -78,6 +72,7 @@ def flatten_record(record: dict, queried_drug: str) -> list[dict]:
             "occurcountry": record.get("occurcountry"),
             "patient_sex": patient.get("patientsex"),
             "patient_age": patient.get("patientonsetage"),
+            "patient_age_unit": patient.get("patientonsetageunit"),
             "receivedate": record.get("receivedate"),
         })
     return rows
