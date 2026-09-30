@@ -1,21 +1,3 @@
-"""
-Fine-tune distilbert on the labeled reaction text, with class weighting to
-address the imbalance problem the zero-shot baseline struggled with.
-
-Uses a held-out test set the model never trains on, and re-scores the
-existing zero-shot predictions on that SAME test set, so the two are
-compared fairly (not on different data).
-
-Run this locally:
-    python 05_fine_tune.py
-
-Requires (install locally, on top of the zero-shot script's dependencies):
-    uv add accelerate
-
-This trains a real model -- expect real time, even on a small model like
-distilbert. Apple Silicon (MPS) is used automatically if available.
-"""
-
 import os
 import numpy as np
 import pandas as pd

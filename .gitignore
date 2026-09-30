@@ -4,3 +4,4 @@ __pycache__/
 data/
 anaconda_projects/
 .ipynb_checkpoints/
+distilbert_finetuned/

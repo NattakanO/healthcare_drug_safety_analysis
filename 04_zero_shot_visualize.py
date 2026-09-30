@@ -1,12 +1,3 @@
-"""
-Extra visualizations from the zero-shot baseline results -- reads the
-predictions already saved by 03_zero_shot_baseline.py, no re-running the
-model needed.
-
-Run this locally:
-    python 04_zero_shot_visualize.py
-"""
-
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
